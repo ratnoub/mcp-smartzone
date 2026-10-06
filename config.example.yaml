@@ -1,0 +1,21 @@
+# mcp-smartzone configuration
+#
+# Copy this file to config.yaml (in the same directory, or point the
+# SMARTZONE_CONFIG environment variable / --config flag at it) and fill
+# in your controller details.
+#
+# Every value can be overridden with an environment variable:
+#   SMARTZONE_HOST, SMARTZONE_BASE_PATH, SMARTZONE_USERNAME,
+#   SMARTZONE_PASSWORD, SMARTZONE_VERIFY_SSL, SMARTZONE_TIMEOUT
+
+smartzone:
+  controller:
+    # Controller base URL (scheme + host + port, no API path)
+    host: "https://192.168.1.10:8443"
+
+    # vSZ public API base path (default shown; adjust for your version)
+    base_path: "/wsg/api/public/v11_0/"
+
+    # API account (create a dedicated read-only account in vSZ)
+    username: "mcp"
+    password: "changeme"

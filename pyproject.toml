@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-smartzone"
+version = "1.0.0"
+description = "Read-only MCP server for the Ruckus SmartZone (vSZ) wireless controller"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "RATNO WAHYU WIDYANTO", email = "ratno@ub.ac.id" },
+]
+keywords = ["mcp", "model-context-protocol", "ruckus", "smartzone", "vSZ", "wlan", "wi-fi"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Networking",
+]
+dependencies = [
+    "mcp>=1.0,<2",
+    "httpx>=0.27",
+    "uvicorn>=0.30",
+    "PyYAML>=6.0",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+mcp-smartzone = "mcp_smartzone.server:main"
+
+[project.urls]
+Homepage = "https://github.com/ratnoww/mcp-smartzone"
+Issues = "https://github.com/ratnoww/mcp-smartzone/issues"
+
+[tool.setuptools.packages.find]
+include = ["mcp_smartzone*"]
