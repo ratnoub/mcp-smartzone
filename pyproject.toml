@@ -38,8 +38,8 @@ dependencies = [
 mcp-smartzone = "mcp_smartzone.server:main"
 
 [project.urls]
-Homepage = "https://github.com/ratnoww/mcp-smartzone"
-Issues = "https://github.com/ratnoww/mcp-smartzone/issues"
+Homepage = "https://github.com/ratnoub/mcp-smartzone"
+Issues = "https://github.com/ratnoub/mcp-smartzone/issues"
 
 [tool.setuptools.packages.find]
 include = ["mcp_smartzone*"]

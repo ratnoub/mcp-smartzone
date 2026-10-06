@@ -42,7 +42,7 @@ the streamable-HTTP / SSE / stdio transports.
 ### With pipx (recommended)
 
 ```bash
-pipx install git+https://github.com/<you>/mcp-smartzone.git
+pipx install git+https://github.com/ratnoub/mcp-smartzone.git
 # or from a local clone:
 pipx install .
 ```
@@ -56,7 +56,7 @@ pip install .
 ### From source (development)
 
 ```bash
-git clone https://github.com/<you>/mcp-smartzone.git
+git clone https://github.com/ratnoub/mcp-smartzone.git
 cd mcp-smartzone
 python -m venv .venv
 .venv\Scripts\activate        # Windows
