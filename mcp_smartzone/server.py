@@ -49,7 +49,7 @@ from dotenv import load_dotenv
 # load_dotenv FIRST — sub-modules must see .env values at import time.
 load_dotenv()
 
-from mcp.server.fastmcp import FastMCP  # noqa: E402
+from fastmcp import FastMCP  # noqa: E402
 
 import mcp_smartzone as _pkg  # noqa: E402
 from mcp_smartzone.api.config import (  # noqa: E402
@@ -418,7 +418,7 @@ def main() -> None:
         logger.error("%s", exc)
         sys.exit(1)
 
-    mcp = FastMCP(SERVER_NAME, host=args.host, port=args.port)
+    mcp = FastMCP(SERVER_NAME)
     register_all_tools(mcp)
 
     transport = args.transport.strip().lower()
@@ -439,31 +439,22 @@ def main() -> None:
         sys.exit(1)
 
     # HTTP transports: build Starlette app, apply security, serve via uvicorn.
-    import anyio
     import uvicorn
 
-    async def _serve() -> None:
-        if transport == "sse":
-            mcp_app = mcp.sse_app()
-        else:
-            mcp_app = mcp.streamable_http_app()
+    mcp_app = mcp.http_app(transport=transport)
+    secured_app = _apply_security(mcp_app)
 
-        secured_app = _apply_security(mcp_app)
-
-        config = uvicorn.Config(
-            secured_app,
-            host=args.host,
-            port=args.port,
-            log_level=os.getenv("LOG_LEVEL", "info").lower(),
-        )
-        server = uvicorn.Server(config)
-        logger.info(
-            "Uvicorn listening on %s:%d (transport=%s) — MCP endpoint: /mcp",
-            args.host, args.port, transport,
-        )
-        await server.serve()
-
-    anyio.run(_serve)
+    endpoint = "/mcp" if transport == "streamable-http" else "/sse"
+    logger.info(
+        "Uvicorn listening on %s:%d (transport=%s) — MCP endpoint: %s",
+        args.host, args.port, transport, endpoint,
+    )
+    uvicorn.run(
+        secured_app,
+        host=args.host,
+        port=args.port,
+        log_level=os.getenv("LOG_LEVEL", "info").lower(),
+    )
 
 
 if __name__ == "__main__":

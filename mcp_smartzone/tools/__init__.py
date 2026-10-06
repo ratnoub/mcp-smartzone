@@ -5,7 +5,7 @@ Each sub-module exposes a ``register_tools(mcp)`` function that is
 called by ``register_all_tools()`` to register every SmartZone tool
 on the FastMCP server instance.
 """
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mcp_smartzone.tools import (
     aaa,
@@ -16,11 +16,13 @@ from mcp_smartzone.tools import (
     dhcp,
     domains,
     monitoring,
+    reports,
     rogue,
     system,
     wlans,
     zones,
 )
+
 
 _MODULES = [
     system,
@@ -33,6 +35,7 @@ _MODULES = [
     aaa,
     dhcp,
     monitoring,
+    reports,
     block_clients,
     rogue,
 ]

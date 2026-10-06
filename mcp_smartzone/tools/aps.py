@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Any, Optional
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mcp_smartzone.api.client import get_client
 from mcp_smartzone.tools._util import to_json

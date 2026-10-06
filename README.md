@@ -3,10 +3,14 @@
 Read-only [MCP](https://modelcontextprotocol.io) (Model Context Protocol) server for the
 **Ruckus SmartZone (vSZ)** wireless controller, built with [FastMCP](https://github.com/modelcontextprotocol/python-sdk).
 
-It exposes the vSZ public REST API as 35 read-only MCP tools so AI assistants
+It exposes the vSZ public REST API as 38 read-only MCP tools so AI assistants
 (Claude Desktop, GitHub Copilot CLI, etc.) can **inspect** your wireless
 infrastructure — zones, APs, WLANs, clients, alarms, rogue APs, and more —
 without any risk of changing configuration.
+
+Built on the standalone [FastMCP](https://github.com/jlowin/fastmcp) package
+(`fastmcp>=4.0`), which provides the `FastMCP` server, tool registration, and
+the streamable-HTTP / SSE / stdio transports.
 
 > All write operations (create / update / delete / enable / disable /
 > disconnect / reboot / clear / block / unblock / mark) are intentionally
@@ -14,7 +18,11 @@ without any risk of changing configuration.
 
 ## Features
 
-- **35 read-only tools** across 12 categories (see [Tools](#tools))
+- **38 read-only tools** across 13 categories (see [Tools](#tools))
+- **Reporting tools** — top-N APs / WLANs / clients by clients or traffic, and a
+  one-call `get_system_summary` with controller info + AP/client/zone/WLAN counts
+- **Generic `query` tool** — search APs, clients, WLANs, zones, and DP-PSK
+  entries with filters and full-text search
 - **Streamable HTTP** transport by default on `0.0.0.0:5754` → clients connect to `http://<IP>:5754/mcp`
 - Also supports **SSE** and **stdio** transports
 - **`--daemon`** mode: run detached in the background with PID + log files
@@ -173,18 +181,35 @@ All tools are prefixed `smartzone_` and are **read-only**.
 
 | Category | Tools |
 |---|---|
-| System (4) | `get_system_info`, `get_controller_status`, `get_licenses`, `get_version` |
-| Zones (3) | `list_zones`, `get_zone`, `get_zone_status` |
-| Access Points (4) | `list_aps`, `get_ap`, `get_ap_status`, `get_ap_neighbors` |
-| WLANs (3) | `list_wlans`, `get_wlan`, `get_wlan_status` |
-| Clients (4) | `list_clients`, `get_client`, `get_client_history`, `get_client_count` |
-| Alarms (3) | `list_alarms`, `get_alarm`, `get_alarm_count` |
-| Domains (3) | `list_domains`, `get_domain`, `get_domain_status` |
-| AAA (3) | `list_aaa_servers`, `get_aaa_server`, `get_aaa_status` |
-| DHCP (3) | `list_dhcp_servers`, `get_dhcp_server`, `get_dhcp_status` |
-| Monitoring (3) | `get_monitoring_status`, `get_monitoring_metrics`, `get_monitoring_history` |
-| Rogue APs (2) | `list_rogue_aps`, `get_rogue_ap` |
-| Blocked Clients (2) | `list_blocked_clients`, `get_blocked_client` |
+| System (5) | `get_system_info`, `get_system_inventory`, `get_system_summary`, `get_controller_list`, `get_cluster_state` |
+| Zones (3) | `list_zones`, `get_zone`, `list_zone_ap_groups` |
+| Access Points (8) | `list_aps`, `get_ap`, `get_ap_operational`, `get_ap_radio`, `get_ap_statistics`, `list_ap_lldp_neighbors`, `list_ap_mesh_neighbors`, `query_aps` |
+| WLANs (3) | `list_wlans`, `get_wlan`, `get_wlan_statistics` |
+| Clients (3) | `list_clients`, `get_client`, `query_clients` |
+| Alarms (2) | `list_alarms`, `get_alarm` |
+| Domains (2) | `list_domains`, `get_domain` |
+| AAA / Auth (2) | `list_auth_servers`, `get_auth_server` |
+| DHCP (2) | `list_dhcp_pools`, `get_dhcp_pool` |
+| VLAN (2) | `list_vlan_pools`, `get_vlan_pool` |
+| Rogue APs (1) | `list_rogue_aps` |
+| Blocked Clients (1) | `list_blocked_clients` |
+| Query & Reports (4) | `query`, `top_aps`, `top_wlans`, `top_clients` |
+
+### Reporting & query tools
+
+- **`smartzone_get_system_summary`** — one-call overview: controller name /
+  model / version / uptime / management IP plus total, online, and offline AP
+  counts, and total client / zone / WLAN counts.
+- **`smartzone_query`** — generic search across `ap`, `client`, `wlan`, `zone`,
+  and `dpsk` with typed filters (e.g. `{"type": "ZONE", "value": "HQ"}`) and
+  full-text search.
+- **`smartzone_get_ap_statistics`** — per-AP operational summary (state,
+  uptime, channels, location) combined with traffic counters (TX/RX bytes,
+  airtime, noise, latency, retry, MCS) from the query API.
+- **`smartzone_top_aps`** — top-N APs ranked by client count or total traffic.
+- **`smartzone_top_wlans`** — top-N WLANs ranked by client count or traffic.
+- **`smartzone_top_clients`** — top-N clients ranked by traffic or session
+  duration.
 
 ## Development
 
@@ -200,7 +225,7 @@ mcp_smartzone/
 ├── api/
 │   ├── client.py      # async HTTP client, serviceTicket caching
 │   └── config.py      # config loading (YAML + env)
-├── tools/             # 12 tool modules, 35 read-only tools
+├── tools/             # 13 tool modules, 38 read-only tools
 ├── server.py          # FastMCP server, daemon management, security
 └── __main__.py        # python -m mcp_smartzone
 ```

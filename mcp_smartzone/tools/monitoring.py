@@ -3,11 +3,12 @@ SmartZone monitoring and query tools (read-only).
 
 Covers the generic query API, AP statistics and WLAN statistics.
 """
+import asyncio
 import json
 import logging
 from typing import Any, Optional
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mcp_smartzone.api.client import get_client
 from mcp_smartzone.tools._util import to_json
@@ -28,18 +29,25 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Run a generic SmartZone query with optional filters.
 
-        Supported query types: ap, client, wlan, dpsk, roguesInfoList, etc.
+                Use this to search any SmartZone resource by free text (MAC, IP,
+                hostname, SSID, username, ...) or by structured filters.
 
-        Args:
-            query_type: Query type (ap, client, wlan, dpsk, roguesInfoList).
-            filters: JSON string of filter criteria.
-            full_text_search: Free-text search.
-            page: Page number (1-indexed).
-            limit: Results per page (max 1000).
+                Args:
+                    query_type: Resource type to query. Common values:
+                        ``ap``, ``client``, ``wlan``, ``zone``, ``dpsk``, ``user``.
+                    filters: Optional JSON string of filter criteria, e.g.
+                        ``[{"type": "ZONE", "value": "Perpustakaan"}]``.
+                        Valid filter types depend on the resource (for ``ap``:
+                        CONTROLBLADE, DOMAIN, ZONE, APGROUP, AP, INDOORMAP,
+                        SYNCEDSTATUS, REGISTRATIONSTATE).
+                    full_text_search: Optional free-text search term. Matches
+                        against names, MAC addresses, IPs, hostnames, SSIDs, etc.
+                    page: Page number (1-indexed).
+                    limit: Results per page (max 1000).
 
-        Returns:
-            JSON with the query results and pagination info.
-        """
+                Returns:
+                    JSON with the query results, ``totalCount`` and pagination info.
+                """
         body: dict[str, Any] = {"page": page, "limit": limit}
         if filters:
             try:
@@ -53,16 +61,52 @@ def register_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def smartzone_get_ap_statistics(ap_mac: str) -> str:
-        """Get traffic statistics for a specific AP.
+            """Get full statistics for a specific AP.
 
-        Args:
-            ap_mac: AP MAC address.
+            Combines the AP operational summary (connection state, client count,
+            uptime, radio channels, location) with rich traffic statistics
+            (per-band throughput, airtime, noise, latency, retries, MCS rates).
 
-        Returns:
-            JSON with the AP operational/traffic summary.
-        """
-        result = await get_client().get(f"aps/{ap_mac}/operational/summary")
-        return to_json(result)
+            Args:
+                ap_mac: AP MAC address (e.g. 00:11:22:33:44:55).
+
+            Returns:
+                JSON with ``operational`` and ``traffic`` sections.
+            """
+            c = get_client()
+            op, q = await asyncio.gather(
+                c.get(f"aps/{ap_mac}/operational/summary"),
+                c.post(
+                    "query/ap",
+                    data={
+                        "page": 1,
+                        "limit": 1,
+                        "filters": [{"type": "AP", "value": ap_mac}],
+                    },
+                ),
+            )
+
+            traffic = None
+            if isinstance(q, dict) and q.get("list"):
+                a = q["list"][0]
+                traffic = {
+                    k: a.get(k)
+                    for k in (
+                        "apMac", "deviceName", "status",
+                        "numClients", "numClients24G", "numClients5G", "numClients6G",
+                        "tx", "rx", "txRx",
+                        "tx24G", "rx24G", "tx50G", "rx50G", "tx6G", "rx6G",
+                        "airtime24G", "airtime5G", "airtime6G",
+                        "noise24G", "noise5G", "noise6G",
+                        "latency24G", "latency50G", "latency6G",
+                        "retry24G", "retry5G", "retry6G",
+                        "medianTxRadioMCSRate24G", "medianTxRadioMCSRate50G",
+                        "medianTxRadioMCSRate6G",
+                        "uptime", "zoneName", "firmwareVersion", "model", "ip",
+                    )
+                }
+
+            return to_json({"operational": op, "traffic": traffic})
 
     @mcp.tool()
     async def smartzone_get_wlan_statistics(
