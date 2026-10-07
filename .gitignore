@@ -12,7 +12,8 @@ venv/
 env/
 
 # Secrets & local config — never commit real credentials
-config.yaml
+config*.yaml
+!config.example.yaml
 .env
 
 # Runtime artifacts

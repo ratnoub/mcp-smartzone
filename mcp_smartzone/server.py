@@ -405,6 +405,18 @@ def main() -> None:
 
     if args.stop:
         sys.exit(stop_daemon())
+
+    # Resolve --config to an absolute path (against the caller's CWD) and
+    # verify it exists. The daemon child runs in DAEMON_CWD, so a relative
+    # path would otherwise be looked up in the wrong directory.
+    if args.config:
+        cfg_path = Path(args.config).expanduser().resolve()
+        if not cfg_path.is_file():
+            print(f"Error: config file not found: {cfg_path}")
+            print("Create it (see config.example.yaml) or pass an existing path.")
+            sys.exit(1)
+        args.config = str(cfg_path)
+
     if args.daemon:
         sys.exit(start_daemon(args))
 
